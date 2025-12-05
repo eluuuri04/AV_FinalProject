@@ -6,15 +6,20 @@ import seaborn as sns
 # Configuració de la pàgina
 st.set_page_config(
     page_title="EDA",
-    page_icon="📄",
+    page_icon="📊​",
     layout="centered"
 )
 # Botó per tornar a la pantalla principal
 if st.button("⬅️ Tornar a la pantalla principal"):
-    st.switch_page()
+    st.switch_page("App.py")
 
 # Comprovar si les dades existeixen
-df = st.session_state["data"]
+try :
+    df = st.session_state["data"]
+except: 
+    st.write("Les dades no estan carregades, torna a la pantalla principal!")
+
+
 
 
 # Títol i descripció
@@ -61,23 +66,16 @@ with col4:
     st.metric("📚 Enrolled 2nd sem (mean)", f"{enrolled_2:.2f}")
 
 
-# Paleta de colors
-color_palette = plt.cm.Set2.colors  
-
-# Filtrar els dos grups
+# --- Filtrar els dos grups ---
 df_drop = df[df['Target'] == 'Dropout']
 df_no_drop = df[df['Target'] != 'Dropout']
 
-# Diccionaris de mapping
+# --- Diccionaris de mapping ---
 category_mappings = {
     'Gender': {1: 'Male', 0: 'Female'},
     'Marital status': {
-        1: 'Single',
-        2: 'Married',
-        3: 'Widower',
-        4: 'Divorced',
-        5: 'Facto Union',
-        6: 'Separated'
+        1: 'Single', 2: 'Married', 3: 'Widower',
+        4: 'Divorced', 5: 'Facto Union', 6: 'Separated'
     },
     'Displaced': {1: 'Yes', 0: 'No'},
     'Scholarship holder': {1: 'Yes', 0: 'No'},
@@ -91,47 +89,7 @@ categorical_cols = [
     'Tuition fees up to date', 'Educational special needs', 'Daytime/evening attendance\t'
 ]
 
-st.title("Comparació Dropout vs No Dropout per variables categòriques")
-
-# Selector de variable
-col_selected = st.selectbox("Selecciona una variable:", categorical_cols)
-
-# Comptar valors per cada grup
-counts_drop = df_drop[col_selected].value_counts()
-counts_no_drop = df_no_drop[col_selected].value_counts()
-
-# Map labels
-mapped_labels_drop = pd.Series(counts_drop.index.map(category_mappings.get(col_selected, {}).get))
-labels_drop = mapped_labels_drop.fillna(pd.Series(counts_drop.index)).tolist()
-
-mapped_labels_no_drop = pd.Series(counts_no_drop.index.map(category_mappings.get(col_selected, {}).get))
-labels_no_drop = mapped_labels_no_drop.fillna(pd.Series(counts_no_drop.index)).tolist()
-
-# Crear gràfics amb colors macos
-fig, axes = plt.subplots(1, 2, figsize=(12, 6))
-
-axes[0].pie(counts_drop, labels=labels_drop, autopct='%1.1f%%', startangle=140,
-            pctdistance=0.85, colors=color_palette[:len(counts_drop)])
-axes[0].set_title(f'{col_selected} - Dropout')
-
-axes[1].pie(counts_no_drop, labels=labels_no_drop, autopct='%1.1f%%', startangle=140,
-            pctdistance=0.85, colors=color_palette[:len(counts_no_drop)])
-axes[1].set_title(f'{col_selected} - No Dropout')
-
-plt.suptitle(f'Distribution of {col_selected}', fontsize=14)
-
-# Mostrar a Streamlit
-st.pyplot(fig)
-
-
-
-# Suposem que la columna 'Target' és categòrica amb 2 valors: Dropout i No Dropout
-target_col = 'Target'
-targets = df[target_col].unique()
-
-# Paleta de colors amb 2 tons macos
-palette = sns.color_palette("Set2", len(targets))
-color_map = dict(zip(targets, palette))
+# --- KPIs numèriques ---
 kpi_columns = [
     'Admission grade',
     'Previous qualification (grade)',
@@ -145,25 +103,71 @@ kpi_columns = [
     'Inflation rate',
     'GDP'
 ]
-# Iterem per cada KPI numèrica
-for col in kpi_columns:
+
+# --- Paletes de colors ---
+color_palette = plt.cm.Set2.colors  
+palette = sns.color_palette("Set2", 2)
+color_map = {"Dropout": palette[0], "No Dropout": palette[1]}
+
+# --- PIE CHARTS ---
+st.title("Comparació Dropout vs No Dropout per variables categòriques")
+
+selected_cats = st.multiselect("Selecciona variables categòriques:", categorical_cols)
+
+for col_selected in selected_cats:
+    counts_drop = df_drop[col_selected].value_counts()
+    counts_no_drop = df_no_drop[col_selected].value_counts()
+
+    mapped_labels_drop = pd.Series(counts_drop.index.map(category_mappings.get(col_selected, {}).get))
+    labels_drop = mapped_labels_drop.fillna(pd.Series(counts_drop.index)).tolist()
+
+    mapped_labels_no_drop = pd.Series(counts_no_drop.index.map(category_mappings.get(col_selected, {}).get))
+    labels_no_drop = mapped_labels_no_drop.fillna(pd.Series(counts_no_drop.index)).tolist()
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+    axes[0].pie(counts_drop, labels=labels_drop, autopct='%1.1f%%', startangle=140,
+                pctdistance=0.85, colors=color_palette[:len(counts_drop)])
+    axes[0].set_title(f'{col_selected} - Dropout')
+
+    axes[1].pie(counts_no_drop, labels=labels_no_drop, autopct='%1.1f%%', startangle=140,
+                pctdistance=0.85, colors=color_palette[:len(counts_no_drop)])
+    axes[1].set_title(f'{col_selected} - No Dropout')
+
+    plt.suptitle(f'Distribution of {col_selected}', fontsize=14)
+    st.pyplot(fig)
+
+# --- DISTRIBUTION PLOTS ---
+st.title("Distribució de KPIs numèriques per Dropout vs No Dropout")
+
+selected_kpis = st.multiselect("Selecciona KPIs numèriques:", kpi_columns)
+
+for col in selected_kpis:
     fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
 
-    # Iterem pels dos subsets
-    for i, target in enumerate(targets):
-        subset = df[df[target_col] == target]
-        sns.histplot(
-            data=subset,
-            x=col,
-            kde=True,
-            ax=axes[i],
-            stat="density",
-            color=color_map[target]
-        )
-        axes[i].set_title(f'{col} - {target}')
-        axes[i].set_xlabel(col)
-        axes[i].set_ylabel('Density')
+    sns.histplot(
+        data=df_drop,
+        x=col,
+        kde=True,
+        ax=axes[0],
+        stat="density",
+        color=color_map["Dropout"]
+    )
+    axes[0].set_title(f'{col} - Dropout')
+    axes[0].set_xlabel(col)
+    axes[0].set_ylabel('Density')
 
-    plt.suptitle(f'Distribution of {col} by {target_col}', fontsize=14)
+    sns.histplot(
+        data=df_no_drop,
+        x=col,
+        kde=True,
+        ax=axes[1],
+        stat="density",
+        color=color_map["No Dropout"]
+    )
+    axes[1].set_title(f'{col} - No Dropout')
+    axes[1].set_xlabel(col)
+    axes[1].set_ylabel('Density')
+
+    plt.suptitle(f'Distribution of {col} (Dropout vs No Dropout)', fontsize=14)
     plt.tight_layout()
-    plt.show()
+    st.pyplot(fig)
