@@ -1,4 +1,3 @@
-# file: pages/02_global_shap_all_data.py  (or any name you want)
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -6,79 +5,49 @@ import shap
 import pickle
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="Global SHAP (all data)", layout="wide")
-st.title("🌍 Global SHAP (totes les dades)")
+st.set_page_config(page_title="Global SHAP Comparison", layout="wide")
+st.title("🌍 Global SHAP – Amb i Sense Performance Acadèmica")
 
-# ---------- HELPERS -----------------------------------------------------------
+# ---------- HELPERS ----------
 @st.cache_resource
-def load_model(model_path: str):
-    with open(model_path, "rb") as f:
+def load_model(path):
+    with open(path, "rb") as f:
         return pickle.load(f)
 
-def build_binary_dataset(df: pd.DataFrame):
-    """
-    Usa exactament el teu codi:
-
-    df_bin["target_bin"] = df_bin["target"].replace({
-        "Dropout": 0,
-        "Graduate": 1,
-        "Enrolled": 1
-    })
-    df_bin = df_bin.drop(["target"], axis = 1)
-
-    I després separem X i y.
-    """
+def build_binary_dataset(df):
     df_bin = df.copy()
-
     df_bin["target_bin"] = df_bin["target"].replace({
-        "Dropout": 0,
-        "Graduate": 1,
-        "Enrolled": 1
+        "Dropout": 0, "Graduate": 1, "Enrolled": 1
     })
+    df_bin = df_bin.drop(columns=["target"])
+    X = df_bin.drop(columns=["target_bin"])
+    y = df_bin["target_bin"]
+    return X, y
 
-    df_bin = df_bin.drop(["target"], axis=1)
+def align_features(df, pipeline):
+    for step in ["imputer", "scaler", "model"]:
+        if hasattr(pipeline.named_steps[step], "feature_names_in_"):
+            trained_cols = list(pipeline.named_steps[step].feature_names_in_)
+            return df[trained_cols]
+    return df  # fallback
 
-    # X = totes les columnes menys la diana binària
-    X_bin = df_bin.drop(["target_bin"], axis=1)
-    y_bin = df_bin["target_bin"]
-
-    return X_bin, y_bin, df_bin
-
-
-def compute_shap_for_pipeline(pipeline, X_bin):
-    """
-    Mateixa lògica que tenies al notebook:
-    imputer + scaler + model d'arbres + TreeExplainer.
-    """
-    imputer = pipeline.named_steps["imputer"]
-    scaler = pipeline.named_steps["scaler"]
-    tree_model = pipeline.named_steps["model"]
-
-    # Transformem com ho veu el model
-    X_transformed = scaler.transform(imputer.transform(X_bin))
-
-    explainer = shap.TreeExplainer(tree_model)
-    shap_vals = explainer.shap_values(X_transformed)
-
-    shap_vals_arr = np.array(shap_vals)
-
-    if shap_vals_arr.ndim == 3:
-        # (n_samples, n_features, n_classes)
-        shap_values_ab = shap_vals_arr[:, :, 1]  # classe 1
-        shap_values_no = shap_vals_arr[:, :, 0]  # classe 0
-    elif isinstance(shap_vals, list):
-        shap_values_no = shap_vals[0]
-        shap_values_ab = shap_vals[1]
+def compute_shap(pipeline, X):
+    imp = pipeline.named_steps["imputer"]
+    scl = pipeline.named_steps["scaler"]
+    model = pipeline.named_steps["model"]
+    X_tr = scl.transform(imp.transform(X))
+    explainer = shap.TreeExplainer(model)
+    vals = explainer.shap_values(X_tr)
+    arr = np.array(vals)
+    if arr.ndim == 3:
+        return arr[:, :, 1], arr[:, :, 0]
+    elif isinstance(vals, list):
+        return vals[1], vals[0]
     else:
-        # cas binari clàssic: una sola matriu
-        shap_values_ab = shap_vals_arr
-        shap_values_no = -shap_vals_arr
-
-    return shap_values_ab, shap_values_no
+        return arr, -arr
 
 
-# ---------- MAIN --------------------------------------------------------------
-# 1) Recuperar totes les dades de session_state
+# ---------- LOAD CSV ----------
 df = pd.read_csv("data.csv", sep=";")
 
 rename_dict = {
@@ -122,77 +91,67 @@ rename_dict = {
 }
 
 df = df.rename(columns=rename_dict)
+X, y = build_binary_dataset(df)
+
+st.write("Distribució de classes:")
+st.write(y.value_counts())
 
 
-st.subheader("Dades originals (totes les files)")
-st.write("Shape:", df.shape)
-st.dataframe(df.head())
+# ---------- LOAD MODELS ----------
+model_full = load_model("course_model.pkl")       # With performance
+model_no_perf = load_model("nocourse_model.pkl")  # Without performance
 
-# 2) Construir dataset binari segons el teu codi
-st.markdown("### Transformació a target binària (`target_bin`)")
-X_bin, y_bin, df_bin = build_binary_dataset(df)
 
-st.write("Shape de `df_bin`:", df_bin.shape)
-st.write("Shape de `X_bin` (features):", X_bin.shape)
-st.write("Distribució de `target_bin`:")
-st.write(y_bin.value_counts())
+# ---------- TABS ----------
+tab1, tab2 = st.tabs(["📚 Amb Performance Acadèmica",
+                      "🚫 Sense Performance Acadèmica"])
 
-# 3) Carregar el model (pipeline amb imputer + scaler + model)
-model_path = "course_model.pkl"
-pipeline = load_model(model_path)
 
-# 4) Calcular SHAP sobre **totes** les dades
-with st.spinner("Calculant valors SHAP sobre totes les files..."):
-    shap_values_ab, shap_values_no = compute_shap_for_pipeline(pipeline, X_bin)
+# 📚 TAB 1 — FULL MODEL
+with tab1:
+    st.header("📚 Global SHAP – Amb Performance Acadèmica")
 
-# 5) Gràfic global SHAP (bar) per a la classe 1 (Abandona / o la que correspongui)
-st.subheader("🔎 Importància global de les variables (classe: 1) – Bar plot")
+    X_full = align_features(X, model_full)
 
-shap.initjs()
+    with st.spinner("Computant SHAP..."):
+        shap_ab_full, _ = compute_shap(model_full, X_full)
 
-fig_bar = plt.figure()
-shap.summary_plot(
-    shap_values_ab,
-    X_bin,
-    feature_names=X_bin.columns,
-    plot_type="bar",
-    show=False,
-)
-st.pyplot(fig_bar)
-plt.close(fig_bar)
+    shap.initjs()
+    st.subheader("Bar plot de importància")
+    fig1 = plt.figure()
+    shap.summary_plot(shap_ab_full, X_full, feature_names=X_full.columns,
+                      plot_type="bar", show=False)
+    st.pyplot(fig1)
+    plt.close(fig1)
 
-# 6) Beeswarm global per la mateixa classe
-st.subheader("🐝 Distribució global SHAP (classe: 1) – Beeswarm")
+    st.subheader("Beeswarm")
+    fig2 = plt.figure()
+    shap.summary_plot(shap_ab_full, X_full, feature_names=X_full.columns,
+                      show=False)
+    st.pyplot(fig2)
+    plt.close(fig2)
 
-fig_bee = plt.figure()
-shap.summary_plot(
-    shap_values_ab,
-    X_bin,
-    feature_names=X_bin.columns,
-    show=False,
-)
-st.pyplot(fig_bee)
-plt.close(fig_bee)
 
-# 7) Opcional: veure també la classe 0
-with st.expander("Mostra SHAP per a la classe 0"):
-    fig_bar_no = plt.figure()
-    shap.summary_plot(
-        shap_values_no,
-        X_bin,
-        feature_names=X_bin.columns,
-        plot_type="bar",
-        show=False,
-    )
-    st.pyplot(fig_bar_no)
-    plt.close(fig_bar_no)
+# 🚫 TAB 2 — REDUCED MODEL
+with tab2:
+    st.header("🚫 Global SHAP – Sense Performance Acadèmica")
 
-    fig_bee_no = plt.figure()
-    shap.summary_plot(
-        shap_values_no,
-        X_bin,
-        feature_names=X_bin.columns,
-        show=False,
-    )
-    st.pyplot(fig_bee_no)
-    plt.close(fig_bee_no)
+    X_red = align_features(X, model_no_perf)
+
+    with st.spinner("Computant SHAP..."):
+        shap_ab_red, _ = compute_shap(model_no_perf, X_red)
+
+    shap.initjs()
+    st.subheader("Bar plot de importància")
+    fig3 = plt.figure()
+    shap.summary_plot(shap_ab_red, X_red, feature_names=X_red.columns,
+                      plot_type="bar", show=False)
+    st.pyplot(fig3)
+    plt.close(fig3)
+
+    st.subheader("Beeswarm")
+    fig4 = plt.figure()
+    shap.summary_plot(shap_ab_red, X_red, feature_names=X_red.columns,
+                      show=False)
+    st.pyplot(fig4)
+    plt.close(fig4)
