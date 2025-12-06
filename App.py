@@ -68,6 +68,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+st.write("\n")
 # Cards amb funcionalitats
 col1, col2, col3 = st.columns(3)
 
@@ -78,6 +79,7 @@ with col1:
         <p>Explora les dades històriques dels estudiants</p>
     </div>
     """, unsafe_allow_html=True)
+    st.write("\n")
     if st.button("Entrar a Anàlisi"):
         st.switch_page("pages/EDA.py")
 
@@ -88,6 +90,8 @@ with col2:
         <p>Descobreix si un estudiant abandonarà o continuarà</p>
     </div>
     """, unsafe_allow_html=True)
+    st.write("\n")
+
     if st.button("Entrar a Predicció"):
         st.switch_page("pages/Predictor.py")
 
@@ -98,6 +102,8 @@ with col3:
         <p>Entén els factors més rellevants de cada predicció</p>
     </div>
     """, unsafe_allow_html=True)
+    st.write("\n")
+
     if st.button("Entrar a Explainability"):
         st.switch_page("pages/Explainability.py")
 
