@@ -62,7 +62,7 @@ with top_col1:
 
 with top_col2:
     st.markdown("<h1 class='main-header'>🔍 SHAP Explainability — Global & Local</h1>", unsafe_allow_html=True)
-    st.write("Analitza l'impacte de cada característica en la probabilitat d'abandonament, tant a nivell global com local.")
+    st.write("Analyze the impact of each feature on the probability of churn, both at a global and local level.")
 
 # ================== HELPERS ==================
 @st.cache_resource
@@ -158,7 +158,7 @@ if "global_data_loaded" not in st.session_state:
     X_full = align_features(X, model_full)
     X_red = align_features(X, model_no_perf)
 
-    with st.spinner("🧠 Calculant SHAP global per als dos models..."):
+    with st.spinner("🧠 Calculanting SHAP global fot the two models..."):
         shap_full_ab, _ = compute_shap_global(model_full, X_full)
         shap_red_ab, _ = compute_shap_global(model_no_perf, X_red)
 
@@ -181,10 +181,10 @@ with tab_global:
     
     shap.initjs()
 
-    sub1, sub2 = st.tabs(["📚 Amb Performance", "🚫 Sense Performance"])
+    sub1, sub2 = st.tabs(["📚 With Course Performance", "🚫 Without Course Performance"])
 
     with sub1:
-        st.markdown("#### 📚 Model amb dades de rendiment acadèmic")
+        st.markdown("#### 📚 Model with data about course performance")
         fig = plt.figure()
         shap.summary_plot(
             st.session_state["shap_full_ab"],
@@ -205,7 +205,7 @@ with tab_global:
         st.pyplot(fig); plt.close(fig)
 
     with sub2:
-        st.markdown("#### 🚫 Model sense dades de rendiment acadèmic")
+        st.markdown("#### 🚫Model without data about course performance")
         fig = plt.figure()
         shap.summary_plot(
             st.session_state["shap_red_ab"],
@@ -230,14 +230,14 @@ with tab_global:
 # ---------------- LOCAL TAB ---------------- #
 with tab_local:
     st.markdown("<div class='section-card'>", unsafe_allow_html=True)
-    st.subheader("🎯 Explicació local de l'última predicció")
+    st.subheader("🎯 Local Explanation about the last prediction")
 
     if "last_model" not in st.session_state:
-        st.warning("⚠️ Primer cal fer una predicció a la pàgina *Predictor*.")
+        st.warning("⚠️ First has to be done a prediction. Go to page *Predictor*.")
         st.stop()
 
     last_used = st.session_state["last_model"]
-    st.info(f"ℹ️ Usant l'última predicció del model: **{last_used}**")
+    st.info(f"ℹ️ Using the last prediction of the model: **{last_used}**")
 
     if last_used == "course":
         X_df = st.session_state["X_df_course"]
@@ -278,7 +278,7 @@ with tab_local:
     st.pyplot(fig)
     plt.close(fig)
 
-    st.subheader("📄 Inputs utilitzats")
+    st.subheader("📄 Inputs used")
     st.dataframe(X_df)
 
     st.markdown("</div>", unsafe_allow_html=True)

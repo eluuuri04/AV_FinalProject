@@ -1,14 +1,14 @@
 import streamlit as st
 import pandas as pd
 
-# Configuració de la pàgina
+# Page Configuration
 st.set_page_config(
-    page_title="Predictor d'abandonament universitari",
+    page_title="University Dropout Predictor",
     page_icon="🎓",
     layout="wide"
 )
 
-# CSS personalitzat
+# Custom CSS
 st.markdown("""
 <style>
 /* Hero section */
@@ -62,60 +62,59 @@ st.markdown("""
 # Hero section
 st.markdown("""
 <div class="hero">
-    <h1>🎓 Predictor d'abandonament universitari</h1>
-    <h2>Projecte Final d'Analítica Visual</h2>
-    <p>Explora, prediu i entén els factors clau de l'èxit acadèmic</p>
+    <h1>🎓 University Dropout Predictor</h1>
+    <h2>Final Visual Analytics Project</h2>
+    <p>Explore, predict, and understand the key factors behind academic success</p>
 </div>
 """, unsafe_allow_html=True)
 
 st.write("\n")
-# Cards amb funcionalitats
+
+# Feature Cards
 col1, col2, col3 = st.columns(3)
 
 with col1:
     st.markdown("""
     <div class="card">
-        <h3>📊 Anàlisi</h3>
-        <p>Explora les dades històriques dels estudiants</p>
+        <h3>📊 Analysis</h3>
+        <p>Explore historical student data</p>
     </div>
     """, unsafe_allow_html=True)
     st.write("\n")
-    if st.button("Entrar a Anàlisi"):
-        st.switch_page("pages/EDA.py")
+    if st.button("Go to Analysis"):
+        st.switch_page("pages/1_EDA.py")
 
 with col2:
     st.markdown("""
     <div class="card">
-        <h3>⚙️ Predicció</h3>
-        <p>Descobreix si un estudiant abandonarà o continuarà</p>
+        <h3>⚙️ Prediction</h3>
+        <p>Predict whether a student will drop out or continue</p>
     </div>
     """, unsafe_allow_html=True)
     st.write("\n")
-
-    if st.button("Entrar a Predicció"):
-        st.switch_page("pages/Predictor.py")
+    if st.button("Go to Prediction"):
+        st.switch_page("pages/2_Predictor.py")
 
 with col3:
     st.markdown("""
     <div class="card">
         <h3>🪤 Explainability</h3>
-        <p>Entén els factors més rellevants de cada predicció</p>
+        <p>Understand the most relevant factors for each prediction</p>
     </div>
     """, unsafe_allow_html=True)
     st.write("\n")
+    if st.button("Go to Explainability"):
+        st.switch_page("pages/3_Explainability.py")
 
-    if st.button("Entrar a Explainability"):
-        st.switch_page("pages/Explainability.py")
-
-# Footer amb autors
+# Footer with authors
 st.markdown("""
 ---
-👨‍💻 **Autors:**  
-- Uriel Cabañas Pedro (NIA: 269121)  
-- Pau Colomer Coll (NIA: 268401)
+👨‍💻 **Authors:**  
+- Uriel Cabañas Pedro (ID: 269121)  
+- Pau Colomer Coll (ID: 268401)
 """)
 
-# Carregar CSV
+# Load CSV
 df = pd.read_csv("data.csv", sep=";")
 st.session_state["data"] = df
-st.success("Fitxer carregat i guardat a session_state ✅")
+st.success("File successfully loaded into session_state ✅")

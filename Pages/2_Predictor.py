@@ -87,7 +87,7 @@ with top_col2:
     st.write("Select known student features and compute dropout risk below 👇")
 
 
-tab_course, tab_nocourse = st.tabs(["📚 With Course Performance", "🚫 Without Performance"])
+tab_course, tab_nocourse = st.tabs(["📚 With Course Performance", "🚫 Without Course Performance"])
 
 # =================================================================================
 # TAB 1 — WITH COURSE PERFORMANCE

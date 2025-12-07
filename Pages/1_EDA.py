@@ -5,7 +5,7 @@ import seaborn as sns
 
 # ================== PAGE CONFIG ==================
 st.set_page_config(
-    page_title="EDA — Exploració de dades",
+    page_title="EDA — Data Exploration",
     page_icon="📊",
     layout="wide"
 )
@@ -56,8 +56,8 @@ with top_col1:
         st.switch_page("app.py")
 
 with top_col2:
-    st.markdown("<h1 class='main-header'>📊 Exploració i anàlisi de les dades</h1>", unsafe_allow_html=True)
-    st.write("Exploració visual del conjunt de dades per entendre patrons i diferències entre estudiants que abandonen i els que continuen.")
+    st.markdown("<h1 class='main-header'>📊 Data Exploration & Analysis</h1>", unsafe_allow_html=True)
+    st.write("Visual exploration of the dataset to understand patterns and differences between students who drop out and those who continue.")
 
 st.markdown("---")
 
@@ -65,24 +65,24 @@ st.markdown("---")
 try:
     df = st.session_state["data"]
 except KeyError:
-    st.error("❌ Les dades no estan carregades. Torna a la pantalla principal per carregar el fitxer.")
+    st.error("❌ Data not loaded. Please return to the home page to upload the dataset.")
     st.stop()
 
 # ================== DATASET INFO ==================
 with st.container():
     st.markdown("<div class='section-card'>", unsafe_allow_html=True)
 
-    st.subheader("📄 Informació del conjunt de dades")
-    st.write("Aqustes dades han estat obtingudes de: " \
+    st.subheader("📄 Dataset Information")
+    st.write("These data were obtained from: " \
     "Valentim Realinho, Jorge Machado, Luís Baptista, & Mónica V. Martins. (2021). Predict students' dropout and academic success (1.0) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.5777340")
-    st.write("Una mostra de les primeres files de les dades:")
+    st.write("Preview of the first rows:")
     st.dataframe(df.head(5))
 
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ================== KPIs GLOBALS ==================
 st.markdown("<div class='section-card'>", unsafe_allow_html=True)
-st.subheader("📌 Indicadors clau (KPIs)")
+st.subheader("📌 Key Performance Indicators (KPIs)")
 
 prev_grade = df["Previous qualification (grade)"].mean()
 admission_grade = df["Admission grade"].mean()
@@ -155,14 +155,14 @@ color_map = {"Dropout": palette[0], "No Dropout": palette[1]}
 
 # ================== CATEGORICAL PIE CHARTS ==================
 st.markdown("<div class='section-card'>", unsafe_allow_html=True)
-st.subheader("🥧 Comparació Dropout vs No Dropout (variables categòriques)")
-st.write("Selecciona variables categòriques per veure la seva distribució entre estudiants que abandonen i els que continuen.")
+st.subheader("🥧 Dropout vs No Dropout — Categorical Variables")
+st.write("Select categorical variables to view their distribution between dropout and non-dropout students.")
 
-selected_cats = st.multiselect("Variables categòriques:", categorical_cols)
+selected_cats = st.multiselect("Categorical variables:", categorical_cols)
 
 for col_selected in selected_cats:
     if col_selected not in df.columns:
-        st.warning(f"⚠️ La columna {col_selected} no existeix al DataFrame.")
+        st.warning(f"⚠️ The column {col_selected} does not exist in the DataFrame.")
         continue
 
     counts_drop = df_drop[col_selected].value_counts()
@@ -183,7 +183,7 @@ for col_selected in selected_cats:
         pctdistance=0.85,
         colors=color_palette[:len(counts_drop)]
     )
-    axes[0].set_title(f'{col_selected} - Dropout')
+    axes[0].set_title(f'{col_selected} — Dropout')
 
     axes[1].pie(
         counts_no_drop,
@@ -193,7 +193,7 @@ for col_selected in selected_cats:
         pctdistance=0.85,
         colors=color_palette[:len(counts_no_drop)]
     )
-    axes[1].set_title(f'{col_selected} - No Dropout')
+    axes[1].set_title(f'{col_selected} — No Dropout')
 
     plt.suptitle(f'Distribution of {col_selected}', fontsize=14)
     st.pyplot(fig)
@@ -202,14 +202,14 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 # ================== NUMERIC DISTRIBUTIONS ==================
 st.markdown("<div class='section-card'>", unsafe_allow_html=True)
-st.subheader("📈 Distribució de KPIs numèriques (Dropout vs No Dropout)")
-st.write("Explora les distribucions numèriques i compara el comportament entre els dos grups.")
+st.subheader("📈 Numeric KPI Distributions (Dropout vs No Dropout)")
+st.write("Explore numeric variable distributions and compare the behavior between both groups.")
 
-selected_kpis = st.multiselect("KPIs numèriques:", kpi_columns)
+selected_kpis = st.multiselect("Numeric variables:", kpi_columns)
 
 for col in selected_kpis:
     if col not in df.columns:
-        st.warning(f"⚠️ La columna {col} no existeix al DataFrame.")
+        st.warning(f"⚠️ The column {col} does not exist in the DataFrame.")
         continue
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 4), sharey=True)
@@ -223,7 +223,7 @@ for col in selected_kpis:
         color=color_map["Dropout"],
         alpha=0.7
     )
-    axes[0].set_title(f'{col} - Dropout')
+    axes[0].set_title(f'{col} — Dropout')
     axes[0].set_xlabel(col)
     axes[0].set_ylabel('Density')
 
@@ -236,7 +236,7 @@ for col in selected_kpis:
         color=color_map["No Dropout"],
         alpha=0.7
     )
-    axes[1].set_title(f'{col} - No Dropout')
+    axes[1].set_title(f'{col} — No Dropout')
     axes[1].set_xlabel(col)
     axes[1].set_ylabel('Density')
 
