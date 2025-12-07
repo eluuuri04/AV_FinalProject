@@ -6,8 +6,63 @@ import pickle
 import matplotlib.pyplot as plt
 import time
 
-st.set_page_config(page_title="Explainability", layout="wide")
-st.title("🔍 SHAP Explainability — Global & Local")
+# ================== PAGE CONFIG ==================
+st.set_page_config(page_title="Explainability", page_icon="🧩", layout="wide")
+
+# ================== GLOBAL STYLE ==================
+st.markdown("""
+<style>
+
+html, body, [class*="css"]  {
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Tabs styling */
+.stTabs [role="tab"] {
+    background: #e7f2ff;
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-weight: 600;
+    margin-right: 10px;
+}
+.stTabs [role="tab"][aria-selected="true"] {
+    background: linear-gradient(135deg, #1E90FF, #00CED1);
+    color: white;
+}
+
+/* Buttons */
+.stButton>button {
+    background: linear-gradient(135deg, #1E90FF, #00CED1);
+    color: white;
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    transition: .15s ease;
+}
+.stButton>button:hover {
+    transform: translateY(-2px);
+}
+
+.main-header {
+    font-size: 2.1rem;
+    font-weight: 750;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+# ================== HEADER + NAV ==================
+top_col1, top_col2 = st.columns([1, 4])
+
+with top_col1:
+    if st.button("⬅️ Home"):
+        st.switch_page("app.py")
+
+with top_col2:
+    st.markdown("<h1 class='main-header'>🔍 SHAP Explainability — Global & Local</h1>", unsafe_allow_html=True)
+    st.write("Analitza l'impacte de cada característica en la probabilitat d'abandonament, tant a nivell global com local.")
 
 # ================== HELPERS ==================
 @st.cache_resource
@@ -50,7 +105,6 @@ def compute_shap_global(pipeline, X):
         shap_ab = arr
         shap_no = -arr
     return shap_ab, shap_no
-
 
 # ================== LOAD & CACHE GLOBAL SHAP ==================
 if "global_data_loaded" not in st.session_state:
@@ -108,7 +162,6 @@ if "global_data_loaded" not in st.session_state:
         shap_full_ab, _ = compute_shap_global(model_full, X_full)
         shap_red_ab, _ = compute_shap_global(model_no_perf, X_red)
 
-    # Cache global results
     st.session_state["X_full"] = X_full
     st.session_state["shap_full_ab"] = shap_full_ab
 
@@ -116,65 +169,75 @@ if "global_data_loaded" not in st.session_state:
     st.session_state["shap_red_ab"] = shap_red_ab
 
     st.session_state["global_data_loaded"] = True
-    st.success("Global SHAP values cached!")
+    st.success("✅ Global SHAP values cached!")
 
-
-# ================== UI SECTIONS ==================
+# ================== TABS ==================
 tab_global, tab_local = st.tabs(["🌍 Global Explainability", "🎯 Local Explainability"])
-
 
 # ---------------- GLOBAL TAB ---------------- #
 with tab_global:
-    sub1, sub2 = st.tabs(["📚 Amb Performance", "🚫 Sense Performance"])
-
+    st.markdown("<div class='section-card'>", unsafe_allow_html=True)
+    st.subheader("🌍 Importància global de les característiques")
+    
     shap.initjs()
 
-    with sub1:
-        st.header("📚 Amb Performance Acadèmica")
+    sub1, sub2 = st.tabs(["📚 Amb Performance", "🚫 Sense Performance"])
 
-        # Bar
+    with sub1:
+        st.markdown("#### 📚 Model amb dades de rendiment acadèmic")
         fig = plt.figure()
-        shap.summary_plot(st.session_state["shap_full_ab"],
-                          st.session_state["X_full"],
-                          feature_names=st.session_state["X_full"].columns,
-                          plot_type="bar", show=False)
+        shap.summary_plot(
+            st.session_state["shap_full_ab"],
+            st.session_state["X_full"],
+            feature_names=st.session_state["X_full"].columns,
+            plot_type="bar",
+            show=False
+        )
         st.pyplot(fig); plt.close(fig)
 
-        # Beeswarm
         fig = plt.figure()
-        shap.summary_plot(st.session_state["shap_full_ab"],
-                          st.session_state["X_full"],
-                          feature_names=st.session_state["X_full"].columns,
-                          show=False)
+        shap.summary_plot(
+            st.session_state["shap_full_ab"],
+            st.session_state["X_full"],
+            feature_names=st.session_state["X_full"].columns,
+            show=False
+        )
         st.pyplot(fig); plt.close(fig)
 
     with sub2:
-        st.header("🚫 Sense Performance Acadèmica")
-
+        st.markdown("#### 🚫 Model sense dades de rendiment acadèmic")
         fig = plt.figure()
-        shap.summary_plot(st.session_state["shap_red_ab"],
-                          st.session_state["X_red"],
-                          feature_names=st.session_state["X_red"].columns,
-                          plot_type="bar", show=False)
+        shap.summary_plot(
+            st.session_state["shap_red_ab"],
+            st.session_state["X_red"],
+            feature_names=st.session_state["X_red"].columns,
+            plot_type="bar",
+            show=False
+        )
         st.pyplot(fig); plt.close(fig)
 
         fig = plt.figure()
-        shap.summary_plot(st.session_state["shap_red_ab"],
-                          st.session_state["X_red"],
-                          feature_names=st.session_state["X_red"].columns,
-                          show=False)
+        shap.summary_plot(
+            st.session_state["shap_red_ab"],
+            st.session_state["X_red"],
+            feature_names=st.session_state["X_red"].columns,
+            show=False
+        )
         st.pyplot(fig); plt.close(fig)
 
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # ---------------- LOCAL TAB ---------------- #
 with tab_local:
+    st.markdown("<div class='section-card'>", unsafe_allow_html=True)
+    st.subheader("🎯 Explicació local de l'última predicció")
+
     if "last_model" not in st.session_state:
-        st.warning("⚠️ Make a prediction first in the Predictor page")
+        st.warning("⚠️ Primer cal fer una predicció a la pàgina *Predictor*.")
         st.stop()
 
     last_used = st.session_state["last_model"]
-
-    st.info(f"Using last prediction from: **{last_used} model**")
+    st.info(f"ℹ️ Usant l'última predicció del model: **{last_used}**")
 
     if last_used == "course":
         X_df = st.session_state["X_df_course"]
@@ -204,7 +267,6 @@ with tab_local:
         feature_names=X_df.columns
     )
 
-    # Output results
     if dropout >= 0.5:
         st.error(f"⚠️ Dropout Risk: {dropout:.2f}")
     else:
@@ -216,5 +278,7 @@ with tab_local:
     st.pyplot(fig)
     plt.close(fig)
 
-    st.subheader("📄 Used Inputs")
+    st.subheader("📄 Inputs utilitzats")
     st.dataframe(X_df)
+
+    st.markdown("</div>", unsafe_allow_html=True)
