@@ -3,7 +3,7 @@ import pandas as pd
 import pickle
 import numpy as np
 import time
-
+import variables as vr
 # ======================== PAGE CONFIG ===========================
 st.set_page_config(page_title="Student Dropout Predictor", layout="wide")
 
@@ -29,6 +29,7 @@ h2 {
     border-radius: 8px;
     font-weight: 600;
     margin-right: 10px;
+    color: black
 }
 .stTabs [role="tab"][aria-selected="true"] {
     background: linear-gradient(135deg, #1E90FF, #00CED1);
@@ -80,7 +81,9 @@ top_col1, top_col2 = st.columns([1, 4])
 
 with top_col1:
     if st.button("⬅️ Home"):
-        st.switch_page("app.py")
+        st.switch_page("App.py")
+
+st.text_input("Student's Name: ", key="name")
 
 with top_col2:
     st.title("⚙️ Student Dropout Predictor")
@@ -88,6 +91,19 @@ with top_col2:
 
 
 tab_course, tab_nocourse = st.tabs(["📚 With Course Performance", "🚫 Without Course Performance"])
+
+def show_optional_dict(label, key, used_list, ignored_list, options_dict):
+    ignore = st.checkbox(f"Ignore {label}", key=f"ignore_{key}")
+    if ignore:
+        ignored_list.append(label)
+        return np.nan
+    used_list.append(label)
+    # Mostrem les descripcions però retornem el codi
+    choice = st.selectbox(label, list(options_dict.values()), key=key)
+    # Buscar la clau corresponent
+    code = [k for k, v in options_dict.items() if v == choice][0]
+    return code
+
 
 # =================================================================================
 # TAB 1 — WITH COURSE PERFORMANCE
@@ -100,29 +116,29 @@ with tab_course:
     col1, col2 = st.columns(2)
 
     with col1:
-        marital = show_optional("Marital Status", "marital", st.selectbox, used_features, ignored_features, [0,1,2])
-        app_mode = show_optional("Application Mode", "app_mode", st.selectbox, used_features, ignored_features, [0,1,2,3])
-        app_order = show_optional("Application Order", "app_order", st.number_input, used_features, ignored_features, value=1)
-        course = show_optional("Course Code", "course", st.number_input, used_features, ignored_features, value=9003)
+        marital = show_optional_dict("Marital Status", "marital", used_features, ignored_features, vr.marital_status)
+        app_mode = show_optional_dict("Application Mode", "app_mode", used_features, ignored_features, vr.application_mode)
+        app_order = show_optional("Application Order", "app_order", st.number_input, used_features, ignored_features, min_value=0, max_value=9, value=0)
+        course = show_optional_dict("Course Code", "course", used_features, ignored_features, vr.courses)
         admission_grade = show_optional("Admission Grade", "admission_grade", st.number_input, used_features, ignored_features, min_value=0.0, max_value=100.0, value=95.0)
-        attendance = show_optional("Attendance", "attendance", st.selectbox, used_features, ignored_features, [0,1])
-        prev_qual = show_optional("Previous Qualification", "prev_qual", st.number_input, used_features, ignored_features, value=1)
-        gender = show_optional("Gender", "gender", st.selectbox, used_features, ignored_features, [0,1])
-        father_job = show_optional("Father Job", "father_job", st.number_input, used_features, ignored_features, value=3)
-        displaced = show_optional("Displaced", "displaced", st.selectbox, used_features, ignored_features, [0,1])
-        special_needs = show_optional("Special Needs", "special_needs", st.selectbox, used_features, ignored_features, [0,1])
+        attendance = show_optional_dict("Attendance", "attendance", used_features, ignored_features, vr.attendance)
+        prev_qual = show_optional_dict("Previous Qualification", "prev_qual", used_features, ignored_features, vr.previous_qualification)
+        gender = show_optional_dict("Gender", "gender", used_features, ignored_features, vr.gender)
+        father_job = show_optional_dict("Father Job", "father_job", used_features, ignored_features, vr.fathers_occupation)
+        displaced = show_optional_dict("Displaced", "displaced", used_features, ignored_features, vr.displaced_map)
+        special_needs = show_optional_dict("Special Needs", "special_needs", used_features, ignored_features, vr.special_needs_map)
 
     with col2:
-        scholarship = show_optional("Scholarship", "scholarship", st.selectbox, used_features, ignored_features, [0,1])
+        scholarship = show_optional_dict("Scholarship", "scholarship", used_features, ignored_features, vr.scholarship_map)
         age = show_optional("Age", "age", st.number_input, used_features, ignored_features, value=21)
-        international = show_optional("International", "international", st.selectbox, used_features, ignored_features, [0,1])
+        international = show_optional_dict("International", "international", used_features, ignored_features, vr.international_map)
         prev_grade = show_optional("Previous Grade", "prev_grade", st.number_input, used_features, ignored_features, min_value=0.0, max_value=100.0, value=95.0)
-        nationality = show_optional("Nationality", "nationality", st.number_input, used_features, ignored_features, value=1)
-        mother_qual = show_optional("Mother Qualification", "mother_qual", st.number_input, used_features, ignored_features, value=1)
-        father_qual = show_optional("Father Qualification", "father_qual", st.number_input, used_features, ignored_features, value=1)
-        mother_job = show_optional("Mother Job", "mother_job", st.number_input, used_features, ignored_features, value=3)
-        debtor = show_optional("Debtor", "debtor", st.selectbox, used_features, ignored_features, [0,1])
-        fees = show_optional("Paid Fees", "fees", st.selectbox, used_features, ignored_features, [0,1])
+        nationality = show_optional_dict("Nationality", "nationality", used_features, ignored_features, vr.nationalities)
+        mother_qual = show_optional_dict("Mother Qualification", "mother_qual", used_features, ignored_features, vr.mother_qual)
+        father_qual = show_optional_dict("Father Qualification", "father_qual", used_features, ignored_features, vr.fathers_qualification)
+        mother_job = show_optional_dict("Mother Job", "mother_job", used_features, ignored_features, vr.mothers_occupation)
+        debtor = show_optional_dict("Debtor", "debtor", used_features, ignored_features, vr.debtor_map)
+        fees = show_optional_dict("Paid Fees", "fees", used_features, ignored_features, vr.fees_map)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -187,29 +203,30 @@ with tab_nocourse:
     col1, col2 = st.columns(2)
 
     with col1:
-        marital = show_optional("Marital Status", "marital_nc", st.selectbox, used_features, ignored_features, [0,1,2])
-        app_mode = show_optional("Application Mode", "app_mode_nc", st.selectbox, used_features, ignored_features, [0,1,2,3])
-        app_order = show_optional("Application Order", "app_order_nc", st.number_input, used_features, ignored_features, value=1)
-        course = show_optional("Course Code", "course_nc", st.number_input, used_features, ignored_features, value=9003)
-        admission_grade = show_optional("Admission Grade", "admission_grade_nc", st.number_input, used_features, ignored_features, value=95.0)
-        attendance = show_optional("Attendance", "attendance_nc", st.selectbox, used_features, ignored_features, [0,1])
-        prev_qual = show_optional("Previous Qualification", "prev_qual_nc", st.number_input, used_features, ignored_features, value=1)
-        gender = show_optional("Gender", "gender_nc", st.selectbox, used_features, ignored_features, [0,1])
-        father_job = show_optional("Father Job", "father_job_nc", st.number_input, used_features, ignored_features, value=3)
-        displaced = show_optional("Displaced", "displaced_nc", st.selectbox, used_features, ignored_features, [0,1])
-        special_needs = show_optional("Special Needs", "special_nc", st.selectbox, used_features, ignored_features, [0,1])
+        marital = show_optional_dict("Marital Status", "marital_nc", used_features, ignored_features, vr.marital_status)
+        app_mode = show_optional_dict("Application Mode", "app_mode_nc", used_features, ignored_features, vr.application_mode)
+        app_order = show_optional("Application Order", "app_order_nc", st.number_input, used_features, ignored_features, min_value=0, max_value=9, value=0)
+        course = show_optional_dict("Course Code", "course_nc", used_features, ignored_features, vr.courses)
+        admission_grade = show_optional("Admission Grade", "admission_grade_nc", st.number_input, used_features, ignored_features, min_value=0.0, max_value=100.0, value=95.0)
+        attendance = show_optional_dict("Attendance", "attendance_nc", used_features, ignored_features, vr.attendance)
+        prev_qual = show_optional_dict("Previous Qualification", "prev_qual_nc", used_features, ignored_features, vr.previous_qualification)
+        gender = show_optional_dict("Gender", "gender_nc", used_features, ignored_features, vr.gender)
+        father_job = show_optional_dict("Father Job", "father_job_nc", used_features, ignored_features, vr.fathers_occupation)
+        displaced = show_optional_dict("Displaced", "displaced_nc", used_features, ignored_features, vr.displaced_map)
+        special_needs = show_optional_dict("Special Needs", "special_nc", used_features, ignored_features, vr.special_needs_map)
 
     with col2:
-        scholarship = show_optional("Scholarship", "scholarship_nc", st.selectbox, used_features, ignored_features, [0,1])
+        scholarship = show_optional_dict("Scholarship", "scholarship_nc", used_features, ignored_features, vr.scholarship_map)
         age = show_optional("Age", "age_nc", st.number_input, used_features, ignored_features, value=21)
-        international = show_optional("International", "international_nc", st.selectbox, used_features, ignored_features, [0,1])
-        prev_grade = show_optional("Previous Grade", "prev_grade_nc", st.number_input, used_features, ignored_features, value=95.0)
-        nationality = show_optional("Nationality", "nationality_nc", st.number_input, used_features, ignored_features, value=1)
-        mother_qual = show_optional("Mother Qualification", "mother_qual_nc", st.number_input, used_features, ignored_features, value=1)
-        father_qual = show_optional("Father Qualification", "father_qual_nc", st.number_input, used_features, ignored_features, value=1)
-        mother_job = show_optional("Mother Job", "mother_job_nc", st.number_input, used_features, ignored_features, value=3)
-        debtor = show_optional("Debtor", "debtor_nc", st.selectbox, used_features, ignored_features, [0,1])
-        fees = show_optional("Paid Fees", "fees_nc", st.selectbox, used_features, ignored_features, [0,1])
+        international = show_optional_dict("International", "international_nc", used_features, ignored_features, vr.international_map)
+        prev_grade = show_optional("Previous Grade", "prev_grade_nc", st.number_input, used_features, ignored_features, min_value=0.0, max_value=100.0, value=95.0)
+        nationality = show_optional_dict("Nationality", "nationality_nc", used_features, ignored_features, vr.nationalities)
+        mother_qual = show_optional_dict("Mother Qualification", "mother_qual_nc", used_features, ignored_features, vr.mother_qual)
+        father_qual = show_optional_dict("Father Qualification", "father_qual_nc", used_features, ignored_features, vr.fathers_qualification)
+        mother_job = show_optional_dict("Mother Job", "mother_job_nc", used_features, ignored_features, vr.mothers_occupation)
+        debtor = show_optional_dict("Debtor", "debtor_nc", used_features, ignored_features, vr.debtor_map)
+        fees = show_optional_dict("Paid Fees", "fees_nc", used_features, ignored_features, vr.fees_map)
+
 
     st.markdown('</div>', unsafe_allow_html=True)
 

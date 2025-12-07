@@ -99,7 +99,7 @@ with col3:
     st.markdown("""
     <div class="card">
         <h3>🪤 Explainability</h3>
-        <p>Understand the most relevant factors for each prediction</p>
+        <p>Which are relevant the factors for the predictions</p>
     </div>
     """, unsafe_allow_html=True)
     st.write("\n")

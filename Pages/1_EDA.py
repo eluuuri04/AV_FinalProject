@@ -53,7 +53,7 @@ top_col1, top_col2 = st.columns([1, 4])
 
 with top_col1:
     if st.button("⬅️ Home"):
-        st.switch_page("app.py")
+        st.switch_page("App.py")
 
 with top_col2:
     st.markdown("<h1 class='main-header'>📊 Data Exploration & Analysis</h1>", unsafe_allow_html=True)
@@ -86,8 +86,18 @@ st.subheader("📌 Key Performance Indicators (KPIs)")
 
 prev_grade = df["Previous qualification (grade)"].mean()
 admission_grade = df["Admission grade"].mean()
-approved_1 = df["Curricular units 1st sem (approved)"].count() / len(df) * 100
-approved_2 = df["Curricular units 2nd sem (approved)"].count() / len(df) * 100
+
+no_enrolled_1 = (df["Curricular units 1st sem (enrolled)"] == 0).sum() #0 enrolled subjects
+diff_1 = df["Curricular units 1st sem (enrolled)"] - df["Curricular units 1st sem (approved)"]
+all_passed_1 = (diff_1 == 0).sum() - no_enrolled_1 #all enrolled passed
+approved_1 = all_passed_1 / (len(df) - no_enrolled_1) * 100
+
+no_enrolled_2 = (df["Curricular units 2nd sem (enrolled)"] == 0).sum() #0 enrolled subjects
+diff_2 = df["Curricular units 2nd sem (enrolled)"] - df["Curricular units 2nd sem (approved)"]
+all_passed_2 = (diff_2 == 0).sum() - no_enrolled_2 #all enrolled passed
+approved_2 = all_passed_2 / (len(df) - no_enrolled_2) * 100
+
+#Grades between 0-20
 grade_1 = df["Curricular units 1st sem (grade)"].mean()
 grade_2 = df["Curricular units 2nd sem (grade)"].mean()
 enrolled_1 = df["Curricular units 1st sem (enrolled)"].mean()
@@ -96,16 +106,16 @@ enrolled_2 = df["Curricular units 2nd sem (enrolled)"].mean()
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.metric("🎓 Previous qualification (grade)", f"{prev_grade:.2f}")
-    st.metric("📝 Admission grade", f"{admission_grade:.2f}")
+    st.metric("🎓 Previous qualification (grade) (0-200)", f"{prev_grade:.2f}")
+    st.metric("📝 Admission grade (0-200)", f"{admission_grade:.2f}")
 
 with col2:
     st.metric("✅ Approved 1st sem (%)", f"{approved_1:.2f}%")
     st.metric("✅ Approved 2nd sem (%)", f"{approved_2:.2f}%")
 
 with col3:
-    st.metric("📈 Grade 1st sem (mean)", f"{grade_1:.2f}")
-    st.metric("📈 Grade 2nd sem (mean)", f"{grade_2:.2f}")
+    st.metric("📈 Grade 1st sem (mean) (0-20)", f"{grade_1:.2f}")
+    st.metric("📈 Grade 2nd sem (mean) (0-20)", f"{grade_2:.2f}")
 
 with col4:
     st.metric("📚 Enrolled 1st sem (mean)", f"{enrolled_1:.2f}")

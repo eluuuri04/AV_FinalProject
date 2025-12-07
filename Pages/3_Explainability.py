@@ -58,7 +58,7 @@ top_col1, top_col2 = st.columns([1, 4])
 
 with top_col1:
     if st.button("⬅️ Home"):
-        st.switch_page("app.py")
+        st.switch_page("App.py")
 
 with top_col2:
     st.markdown("<h1 class='main-header'>🔍 SHAP Explainability — Global & Local</h1>", unsafe_allow_html=True)
@@ -152,7 +152,9 @@ if "global_data_loaded" not in st.session_state:
     df = df.rename(columns=rename_dict)
     X, y = build_binary_dataset(df)
 
+
     model_full = load_model("course_model.pkl")
+    
     model_no_perf = load_model("nocourse_model.pkl")
 
     X_full = align_features(X, model_full)
@@ -230,8 +232,10 @@ with tab_global:
 # ---------------- LOCAL TAB ---------------- #
 with tab_local:
     st.markdown("<div class='section-card'>", unsafe_allow_html=True)
-    st.subheader("🎯 Local Explanation about the last prediction")
-
+    if "student_name" in st.session_state and st.session_state.student_name.strip() != "":
+        st.subheader(f"🎯 Local Explanation about the last prediction for {st.session_state.student_name}")
+    else:
+        st.subheader("🎯 Local Explanation about the last prediction")
     if "last_model" not in st.session_state:
         st.warning("⚠️ First has to be done a prediction. Go to page *Predictor*.")
         st.stop()
