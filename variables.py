@@ -1,6 +1,6 @@
 # variables.py
 
-# ========================= CATEGORIES COMUNES =========================
+#for common categories
 yes_no = {
     0: "No",
     1: "Yes",
@@ -16,7 +16,6 @@ attendance = {
     0: "Evening",
 }
 
-# ========================= ESTAT CIVIL =========================
 marital_status = {
     1: "Single",
     2: "Married",
@@ -26,7 +25,6 @@ marital_status = {
     6: "Legally separated",
 }
 
-# ========================= MODE D'APLICACIÓ =========================
 application_mode = {
     1: "1st phase – general contingent",
     2: "Ordinance No. 612/93",
@@ -48,10 +46,8 @@ application_mode = {
     57: "Change of institution/course (International)",
 }
 
-# Per a number_input al teu codi (0–9)
 application_order = list(range(10))
 
-# ========================= CURSOS =========================
 courses = {
     33: "Biofuel Production Technologies",
     171: "Animation and Multimedia Design",
@@ -72,7 +68,6 @@ courses = {
     9991: "Management (evening attendance)",
 }
 
-# ========================= QUALIFICACIÓ PRÈVIA =========================
 previous_qualification = {
     1: "Secondary education",
     2: "Higher education – bachelor’s degree",
@@ -93,7 +88,6 @@ previous_qualification = {
     43: "Higher education – master (2nd cycle)",
 }
 
-# ========================= NACIONALITATS =========================
 nationalities = {
     1: "Portuguese",
     2: "German",
@@ -118,8 +112,6 @@ nationalities = {
     109: "Colombian",
 }
 
-# ========================= QUALIFICACIÓ PARES =========================
-# (noms exactes segons el teu codi: mother_qual i fathers_qualification)
 mother_qual = {
     1: "Secondary Education – 12th Year",
     2: "Higher Education – Bachelor’s",
@@ -160,8 +152,6 @@ fathers_qualification = mother_qual | {
     33: "Supplementary Accounting and Administration",
 }
 
-# ========================= OCUPACIONS =========================
-# NOTA: substitueix per la llista exacta del dataset si la tens identificada.
 mothers_occupation = {
     1: "Student",
     2: "Teacher",
@@ -174,10 +164,8 @@ mothers_occupation = {
     9: "Other",
 }
 
-fathers_occupation = mothers_occupation
+fathers_occupation = mothers_occupation #are the same
 
-# ========================= MAPES SÍ/NO PER CAMPS DEL TEU UI =========================
-# Els següents camps del teu UI són Sí/No. Pots reutilitzar yes_no.
 displaced_map = yes_no
 special_needs_map = yes_no
 scholarship_map = yes_no
