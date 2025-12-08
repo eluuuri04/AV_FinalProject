@@ -130,8 +130,8 @@ df_no_drop = df[df['Target'] != 'Dropout']
 category_mappings = {
     'Gender': {1: 'Male', 0: 'Female'},
     'Marital status': {
-        1: 'Single', 2: 'Married', 3: 'Widower',
-        4: 'Divorced', 5: 'Facto Union', 6: 'Separated'
+        1: 'Single', 2: 'Married', 3: 'Other...',
+        4: '', 5: '', 6: ''
     },
     'Displaced': {1: 'Yes', 0: 'No'},
     'Scholarship holder': {1: 'Yes', 0: 'No'},
