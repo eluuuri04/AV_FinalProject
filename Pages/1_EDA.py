@@ -165,7 +165,7 @@ color_map = {"Dropout": palette[0], "No Dropout": palette[1]}
 
 # ================== CATEGORICAL PIE CHARTS ==================
 st.markdown("<div class='section-card'>", unsafe_allow_html=True)
-st.subheader("🥧 Dropout vs No Dropout — Categorical Variables")
+st.subheader("🥧📊 Dropout vs No Dropout — Categorical Variables")
 st.write("Select categorical variables to view their distribution between dropout and non-dropout students.")
 
 selected_cats = st.multiselect("Categorical variables:", categorical_cols)
