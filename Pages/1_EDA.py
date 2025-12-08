@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.preprocessing import LabelEncoder
 
 
 st.set_page_config(
@@ -251,6 +252,98 @@ for col in selected_kpis:
 
     plt.suptitle(f'Distribution of {col} (Dropout vs No Dropout)', fontsize=14)
     plt.tight_layout()
+    st.pyplot(fig)
+    
+st.markdown("</div>", unsafe_allow_html=True)
+
+
+st.markdown("<div class='section-card'>", unsafe_allow_html=True)
+st.subheader("📌 Feature Relationships — Dropout vs No Dropout")
+st.write("Select feature pairs to visualize relationships between dropout and non-dropout students.")
+
+# Define feature pairs with user-friendly labels
+scatter_pairs = {
+    "Admission grade vs 1st Sem Grade": ("Admission grade", "Curricular units 1st sem (grade)"),
+    "Age vs Admission grade": ("Age at enrollment", "Admission grade"),
+    "1st vs 2nd Sem Grade": ("Curricular units 1st sem (grade)", "Curricular units 2nd sem (grade)"),
+    "1st Sem Approved vs 1st Sem Grade": ("Curricular units 1st sem (approved)", "Curricular units 1st sem (grade)")
+}
+
+# User selects which plots to show
+selected_scatter_plots = st.multiselect(
+    "Choose feature relationships to view:",
+    list(scatter_pairs.keys())
+)
+
+color_drop = "#FF6666"
+color_no_drop = "#4CAF50"
+
+for label in selected_scatter_plots:
+    x_col, y_col = scatter_pairs[label]
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5), sharex=True, sharey=True)
+
+    # Dropout Scatter
+    axes[0].scatter(df_drop[x_col], df_drop[y_col], alpha=0.7, color=color_drop, edgecolor='black')
+    axes[0].set_title("Dropout")
+    axes[0].set_xlabel(x_col)
+    axes[0].set_ylabel(y_col)
+
+    # No Dropout Scatter
+    axes[1].scatter(df_no_drop[x_col], df_no_drop[y_col], alpha=0.7, color=color_no_drop, edgecolor='black')
+    axes[1].set_title("No Dropout")
+    axes[1].set_xlabel(x_col)
+    axes[1].set_ylabel(y_col)
+
+    plt.suptitle(label, fontsize=14)
+    plt.tight_layout()
+    st.pyplot(fig)
+
+st.markdown("</div>", unsafe_allow_html=True)
+
+
+# Initialize session state for toggle
+if "show_corr" not in st.session_state:
+    st.session_state.show_corr = False
+
+st.markdown("<div class='section-card'>", unsafe_allow_html=True)
+st.subheader("🔗 Feature Correlation Matrix")
+
+# Toggle Show/Hide
+if st.button("👁️ Show / Hide Correlation Matrix"):
+    st.session_state.show_corr = not st.session_state.show_corr
+
+# Display only if toggled ON
+if st.session_state.show_corr:
+
+    st.write("Correlation between numerical features and dropout outcome.")
+
+    # Create copy to encode target
+    df_corr = df.copy()
+
+    le = LabelEncoder()
+    df_corr['target_encoded'] = le.fit_transform(df_corr['Target'])
+
+    # Select numeric columns
+    numerical_cols = df_corr.select_dtypes(include=['float64', 'int64']).columns.tolist()
+
+    if 'target_encoded' in numerical_cols:
+        numerical_cols.remove('target_encoded')
+    numerical_cols.append('target_encoded')
+
+    corr_matrix = df_corr[numerical_cols].corr()
+
+    # Create heatmap
+    fig, ax = plt.subplots(figsize=(20, 18))
+    sns.heatmap(
+        corr_matrix,
+        cmap='coolwarm',
+        annot=False,
+        linewidths=.5,
+        ax=ax
+    )
+    ax.set_title("Correlation Matrix of Numerical Features & Encoded Target", fontsize=16)
+
     st.pyplot(fig)
 
 st.markdown("</div>", unsafe_allow_html=True)
