@@ -4,7 +4,7 @@ import numpy as np
 import shap
 import pickle
 import matplotlib.pyplot as plt
-import time
+import variables as vr  # <--- IMPORTED YOUR VARIABLES
 
 # ================== PAGE CONFIG ==================
 st.set_page_config(page_title="Explainability", page_icon="🧩", layout="wide")
@@ -12,277 +12,265 @@ st.set_page_config(page_title="Explainability", page_icon="🧩", layout="wide")
 # ================== GLOBAL STYLE ==================
 st.markdown("""
 <style>
-
-html, body, [class*="css"]  {
-    font-family: 'Poppins', sans-serif;
-}
-
-/* Tabs styling */
-.stTabs [role="tab"] {
-    background: #e7f2ff;
-    padding: 10px 22px;
-    border-radius: 8px;
-    font-weight: 600;
-    margin-right: 10px;
-}
-.stTabs [role="tab"][aria-selected="true"] {
-    background: linear-gradient(135deg, #1E90FF, #00CED1);
-    color: white;
-}
-
-/* Buttons */
-.stButton>button {
-    background: linear-gradient(135deg, #1E90FF, #00CED1);
-    color: white;
-    border-radius: 8px;
-    padding: 8px 18px;
-    font-size: 14px;
-    font-weight: 600;
-    border: none;
-    transition: .15s ease;
-}
-.stButton>button:hover {
-    transform: translateY(-2px);
-}
-
-.main-header {
-    font-size: 2.1rem;
-    font-weight: 750;
-}
-
+html, body, [class*="css"]  { font-family: 'Poppins', sans-serif; }
+.stTabs [role="tab"] { background: #e7f2ff; padding: 10px 22px; border-radius: 8px; font-weight: 600; margin-right: 10px; }
+.stTabs [role="tab"][aria-selected="true"] { background: linear-gradient(135deg, #1E90FF, #00CED1); color: white; }
+.stButton>button { background: linear-gradient(135deg, #1E90FF, #00CED1); color: white; border-radius: 8px; border: none; transition: .15s ease; }
+.stButton>button:hover { transform: translateY(-2px); }
+.main-header { font-size: 2.1rem; font-weight: 750; }
+.section-card { background-color: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
 </style>
 """, unsafe_allow_html=True)
 
 # ================== HEADER + NAV ==================
 top_col1, top_col2 = st.columns([1, 4])
-
 with top_col1:
     if st.button("⬅️ Home"):
         st.switch_page("App.py")
-
 with top_col2:
     st.markdown("<h1 class='main-header'>🔍 SHAP Explainability — Global & Local</h1>", unsafe_allow_html=True)
-    st.write("Analyze the impact of each feature on the probability of churn, both at a global and local level.")
+    st.write("Analyze feature impact on dropout probability (Global) and explain specific predictions (Local).")
 
-# ================== HELPERS ==================
+# ================== CACHED FUNCTIONS ==================
+
 @st.cache_resource
 def load_model(path):
     with open(path, "rb") as f:
         return pickle.load(f)
 
-def build_binary_dataset(df):
+@st.cache_data
+def load_static_data():
+    if "data" in st.session_state and isinstance(st.session_state["data"], pd.DataFrame):
+        return st.session_state["data"]
+    return pd.read_csv("data.csv", sep=";")
+
+def preprocess_data(df):
+    rename_dict = {
+        "Marital status": "marital", "Application mode": "app_mode", "Application order": "app_order",
+        "Course": "course", "Daytime/evening attendance\t": "attendance", "Previous qualification": "prev_qual",
+        "Previous qualification (grade)": "prev_grade", "Nacionality": "nationality", 
+        "Mother's qualification": "mother_qual", "Father's qualification": "father_qual",
+        "Mother's occupation": "mother_job", "Father's occupation": "father_job",
+        "Admission grade": "admission_grade", "Displaced": "displaced",
+        "Educational special needs": "special_needs", "Debtor": "debtor", "Tuition fees up to date": "fees",
+        "Gender": "gender", "Scholarship holder": "scholarship", "Age at enrollment": "age",
+        "International": "international", "Curricular units 1st sem (credited)": "cred_1",
+        "Curricular units 1st sem (enrolled)": "enrolled_1", "Curricular units 1st sem (evaluations)": "evals_1",
+        "Curricular units 1st sem (approved)": "approved_1", "Curricular units 1st sem (grade)": "grade_1",
+        "Curricular units 1st sem (without evaluations)": "no_evals_1", "Curricular units 2nd sem (credited)": "cred_2",
+        "Curricular units 2nd sem (enrolled)": "enrolled_2", "Curricular units 2nd sem (evaluations)": "evals_2",
+        "Curricular units 2nd sem (approved)": "approved_2", "Curricular units 2nd sem (grade)": "grade_2",
+        "Curricular units 2nd sem (without evaluations)": "no_evals_2", "Unemployment rate": "unemployment",
+        "Inflation rate": "inflation", "GDP": "gdp", "Target": "target"
+    }
+    df = df.rename(columns=rename_dict)
+    
     df_bin = df.copy()
-    df_bin["target_bin"] = df_bin["target"].replace({
-        "Dropout": 0, "Graduate": 1, "Enrolled": 1
-    })
-    df_bin = df_bin.drop(columns=["target"])
-    X = df_bin.drop(columns=["target_bin"])
-    y = df_bin["target_bin"]
+    if "target" in df_bin.columns:
+        df_bin["target_bin"] = df_bin["target"].replace({"Dropout": 0, "Graduate": 1, "Enrolled": 1})
+        df_bin = df_bin.drop(columns=["target"])
+        X = df_bin.drop(columns=["target_bin"])
+        y = df_bin["target_bin"]
+    else:
+        X = df_bin
+        y = None
     return X, y
 
 def align_features(df, pipeline):
     for step in ["imputer", "scaler", "model"]:
         if hasattr(pipeline.named_steps[step], "feature_names_in_"):
-            trained_cols = list(pipeline.named_steps[step].feature_names_in_)
-            return df[trained_cols]
+            return df[list(pipeline.named_steps[step].feature_names_in_)]
     return df
 
-def compute_shap_global(pipeline, X):
-    imp = pipeline.named_steps["imputer"]
-    scl = pipeline.named_steps["scaler"]
-    model = pipeline.named_steps["model"]
-    X_tr = scl.transform(imp.transform(X))
-    explainer = shap.TreeExplainer(model)
-    vals = explainer.shap_values(X_tr)
-    arr = np.array(vals)
-    if arr.ndim == 3:
-        shap_ab = arr[:, :, 1]
-        shap_no = arr[:, :, 0]
-    elif isinstance(vals, list):
-        shap_no = vals[0]
-        shap_ab = vals[1]
+@st.cache_data(show_spinner=False)
+def compute_global_shap_sampled(_pipeline, X, sample_size=300):
+    if len(X) > sample_size:
+        X_sample = X.sample(sample_size, random_state=42)
     else:
-        shap_ab = arr
-        shap_no = -arr
-    return shap_ab, shap_no
+        X_sample = X
 
-# ================== LOAD & CACHE GLOBAL SHAP ==================
-if "global_data_loaded" not in st.session_state:
-    df = pd.read_csv("data.csv", sep=";")
-
-    rename_dict = {
-        "Marital status": "marital",
-        "Application mode": "app_mode",
-        "Application order": "app_order",
-        "Course": "course",
-        "Daytime/evening attendance\t": "attendance",
-        "Previous qualification": "prev_qual",
-        "Previous qualification (grade)": "prev_grade",
-        "Nacionality": "nationality",
-        "Mother's qualification": "mother_qual",
-        "Father's qualification": "father_qual",
-        "Mother's occupation": "mother_job",
-        "Father's occupation": "father_job",
-        "Admission grade": "admission_grade",
-        "Displaced": "displaced",
-        "Educational special needs": "special_needs",
-        "Debtor": "debtor",
-        "Tuition fees up to date": "fees",
-        "Gender": "gender",
-        "Scholarship holder": "scholarship",
-        "Age at enrollment": "age",
-        "International": "international",
-        "Curricular units 1st sem (credited)": "cred_1",
-        "Curricular units 1st sem (enrolled)": "enrolled_1",
-        "Curricular units 1st sem (evaluations)": "evals_1",
-        "Curricular units 1st sem (approved)": "approved_1",
-        "Curricular units 1st sem (grade)": "grade_1",
-        "Curricular units 1st sem (without evaluations)": "no_evals_1",
-        "Curricular units 2nd sem (credited)": "cred_2",
-        "Curricular units 2nd sem (enrolled)": "enrolled_2",
-        "Curricular units 2nd sem (evaluations)": "evals_2",
-        "Curricular units 2nd sem (approved)": "approved_2",
-        "Curricular units 2nd sem (grade)": "grade_2",
-        "Curricular units 2nd sem (without evaluations)": "no_evals_2",
-        "Unemployment rate": "unemployment",
-        "Inflation rate": "inflation",
-        "GDP": "gdp",
-        "Target": "target"
-    }
-    df = df.rename(columns=rename_dict)
-    X, y = build_binary_dataset(df)
-
-
-    model_full = load_model("course_model.pkl")
+    imp = _pipeline.named_steps["imputer"]
+    scl = _pipeline.named_steps["scaler"]
+    model = _pipeline.named_steps["model"]
     
-    model_no_perf = load_model("nocourse_model.pkl")
+    X_tr = scl.transform(imp.transform(X_sample))
+    
+    explainer = shap.TreeExplainer(model)
+    shap_values = explainer.shap_values(X_tr, check_additivity=False)
+    
+    arr = np.array(shap_values)
+    if isinstance(shap_values, list):
+        shap_out = shap_values[1]
+    elif arr.ndim == 3:
+        shap_out = arr[:, :, 1]
+    else:
+        shap_out = arr
 
-    X_full = align_features(X, model_full)
-    X_red = align_features(X, model_no_perf)
+    return shap_out, X_sample
 
-    with st.spinner("🧠 Calculanting SHAP global fot the two models..."):
-        shap_full_ab, _ = compute_shap_global(model_full, X_full)
-        shap_red_ab, _ = compute_shap_global(model_no_perf, X_red)
+# NEW: Helper function to map numbers to text for display
+def get_readable_df(df_input):
+    df_nice = df_input.copy()
+    
+    # Map for columns present in your models (handling both standard and _nc suffixes)
+    mappings = {
+        # Categories
+        "marital": vr.marital_status, "marital_nc": vr.marital_status,
+        "app_mode": vr.application_mode, "app_mode_nc": vr.application_mode,
+        "course": vr.courses, "course_nc": vr.courses,
+        "attendance": vr.attendance, "attendance_nc": vr.attendance,
+        "prev_qual": vr.previous_qualification, "prev_qual_nc": vr.previous_qualification,
+        "nationality": vr.nationalities, "nationality_nc": vr.nationalities,
+        "gender": vr.gender, "gender_nc": vr.gender,
+        
+        # Qualifications
+        "mother_qual": vr.mother_qual, "mother_qual_nc": vr.mother_qual,
+        "father_qual": vr.fathers_qualification, "father_qual_nc": vr.fathers_qualification,
+        
+        # Jobs
+        "mother_job": vr.mothers_occupation, "mother_job_nc": vr.mothers_occupation,
+        "father_job": vr.fathers_occupation, "father_job_nc": vr.fathers_occupation,
+        
+        # Yes/No Fields
+        "displaced": vr.yes_no, "displaced_nc": vr.yes_no,
+        "special_needs": vr.yes_no, "special_nc": vr.yes_no,
+        "scholarship": vr.yes_no, "scholarship_nc": vr.yes_no,
+        "international": vr.yes_no, "international_nc": vr.yes_no,
+        "debtor": vr.yes_no, "debtor_nc": vr.yes_no,
+        "fees": vr.yes_no, "fees_nc": vr.yes_no,
+    }
 
-    st.session_state["X_full"] = X_full
-    st.session_state["shap_full_ab"] = shap_full_ab
+    for col, map_dict in mappings.items():
+        if col in df_nice.columns:
+            # Map values; if value not in dict, keep original number
+            df_nice[col] = df_nice[col].map(map_dict).fillna(df_nice[col])
+            
+    return df_nice
 
-    st.session_state["X_red"] = X_red
-    st.session_state["shap_red_ab"] = shap_red_ab
+# ================== INITIALIZATION ==================
 
-    st.session_state["global_data_loaded"] = True
-    st.success("✅ Global SHAP values cached!")
+raw_df = load_static_data()
+X_raw, _ = preprocess_data(raw_df)
 
-# ================== TABS ==================
+model_full = load_model("course_model.pkl")
+model_nocourse = load_model("nocourse_model.pkl")
+
+X_full = align_features(X_raw, model_full)
+X_red = align_features(X_raw, model_nocourse)
+
+if "shap_global_calculated" not in st.session_state:
+    with st.spinner("🧠 Calculating Global Explainability..."):
+        shap_full, X_full_sample = compute_global_shap_sampled(model_full, X_full, sample_size=300)
+        shap_red, X_red_sample = compute_global_shap_sampled(model_nocourse, X_red, sample_size=300)
+        
+        st.session_state.update({
+            "shap_full": shap_full, "X_full_sample": X_full_sample,
+            "shap_red": shap_red, "X_red_sample": X_red_sample,
+            "shap_global_calculated": True
+        })
+
+# ================== UI TABS ==================
 tab_global, tab_local = st.tabs(["🌍 Global Explainability", "🎯 Local Explainability"])
 
-# ---------------- GLOBAL TAB ---------------- #
+# ----------------- GLOBAL -----------------
 with tab_global:
     st.markdown("<div class='section-card'>", unsafe_allow_html=True)
-    st.subheader("🌍 Importància global de les característiques")
-    
-    shap.initjs()
+    st.subheader("🌍 Feature Importance (Global)")
+    st.write("These plots show which features drive the model's decisions on average.")
 
-    sub1, sub2 = st.tabs(["📚 With Course Performance", "🚫 Without Course Performance"])
+    sub_t1, sub_t2 = st.tabs(["📚 With Course Performance", "🚫 Without Course Performance"])
 
-    with sub1:
-        st.markdown("#### 📚 Model with data about course performance")
-        fig = plt.figure()
-        shap.summary_plot(
-            st.session_state["shap_full_ab"],
-            st.session_state["X_full"],
-            feature_names=st.session_state["X_full"].columns,
-            plot_type="bar",
-            show=False
-        )
-        st.pyplot(fig); plt.close(fig)
+    def plot_shap(shap_vals, X_dat):
+        fig, ax = plt.subplots()
+        shap.summary_plot(shap_vals, X_dat, show=False)
+        st.pyplot(fig)
+        plt.close(fig)
+        
+        fig2, ax2 = plt.subplots()
+        shap.summary_plot(shap_vals, X_dat, plot_type="bar", show=False)
+        st.pyplot(fig2)
+        plt.close(fig2)
 
-        fig = plt.figure()
-        shap.summary_plot(
-            st.session_state["shap_full_ab"],
-            st.session_state["X_full"],
-            feature_names=st.session_state["X_full"].columns,
-            show=False
-        )
-        st.pyplot(fig); plt.close(fig)
-
-    with sub2:
-        st.markdown("#### 🚫Model without data about course performance")
-        fig = plt.figure()
-        shap.summary_plot(
-            st.session_state["shap_red_ab"],
-            st.session_state["X_red"],
-            feature_names=st.session_state["X_red"].columns,
-            plot_type="bar",
-            show=False
-        )
-        st.pyplot(fig); plt.close(fig)
-
-        fig = plt.figure()
-        shap.summary_plot(
-            st.session_state["shap_red_ab"],
-            st.session_state["X_red"],
-            feature_names=st.session_state["X_red"].columns,
-            show=False
-        )
-        st.pyplot(fig); plt.close(fig)
+    with sub_t1:
+        plot_shap(st.session_state["shap_full"], st.session_state["X_full_sample"])
+    with sub_t2:
+        plot_shap(st.session_state["shap_red"], st.session_state["X_red_sample"])
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-# ---------------- LOCAL TAB ---------------- #
+# ----------------- LOCAL -----------------
 with tab_local:
     st.markdown("<div class='section-card'>", unsafe_allow_html=True)
-    if "student_name" in st.session_state and st.session_state.student_name.strip() != "":
-        st.subheader(f"🎯 Local Explanation about the last prediction for {st.session_state.student_name}")
-    else:
-        st.subheader("🎯 Local Explanation about the last prediction")
+
     if "last_model" not in st.session_state:
-        st.warning("⚠️ First has to be done a prediction. Go to page *Predictor*.")
+        st.warning("⚠️ No prediction found. Please go to the **Predictor** page first.")
+        st.stop()
+    
+    last_model_name = st.session_state["last_model"]
+    student_name = st.session_state.get("student_name", "Unknown Student")
+
+    st.subheader(f"🎯 Local Explanation for: {student_name}")
+    st.info(f"ℹ️ Explaining last prediction using model: **{last_model_name}**")
+
+    if last_model_name == "course":
+        pipeline = model_full
+        X_input = st.session_state.get("X_df_course")
+        prob = st.session_state.get("dropout_course")
+    else:
+        pipeline = model_nocourse
+        X_input = st.session_state.get("X_df_nocourse")
+        prob = st.session_state.get("dropout_nocourse")
+
+    if X_input is None:
+        st.error("Error retrieving prediction data.")
         st.stop()
 
-    last_used = st.session_state["last_model"]
-    st.info(f"ℹ️ Using the last prediction of the model: **{last_used}**")
-
-    if last_used == "course":
-        X_df = st.session_state["X_df_course"]
-        dropout = st.session_state["dropout_course"]
-        pipeline = load_model("course_model.pkl")
-    else:
-        X_df = st.session_state["X_df_nocourse"]
-        dropout = st.session_state["dropout_nocourse"]
-        pipeline = load_model("nocourse_model.pkl")
-
+    # Calculate SHAP
     imp = pipeline.named_steps["imputer"]
     scl = pipeline.named_steps["scaler"]
     model = pipeline.named_steps["model"]
-
-    X_trans = scl.transform(imp.transform(X_df))
-
+    X_trans = scl.transform(imp.transform(X_input))
     explainer = shap.TreeExplainer(model)
-    shap_raw = explainer.shap_values(X_trans)
-    shap_arr = np.array(shap_raw)
-    shap_instance = shap_arr[0, :, 1] if shap_arr.ndim == 3 else shap_arr[0]
-    base = explainer.expected_value[1] if isinstance(explainer.expected_value, (np.ndarray, list)) else explainer.expected_value
+    shap_values_single = explainer.shap_values(X_trans)
+    
+    if isinstance(shap_values_single, list):
+        sv = shap_values_single[1][0]
+        base_val = explainer.expected_value[1]
+    elif np.array(shap_values_single).ndim == 3:
+        sv = shap_values_single[0, :, 1]
+        base_val = explainer.expected_value[1]
+    else:
+        sv = shap_values_single[0]
+        base_val = explainer.expected_value
 
-    exp_local = shap.Explanation(
-        values=shap_instance,
-        base_values=base,
-        data=X_df.iloc[0, :].values,
-        feature_names=X_df.columns
+    exp = shap.Explanation(
+        values=sv, base_values=base_val,
+        data=X_input.iloc[0].values, feature_names=X_input.columns
     )
 
-    if dropout >= 0.5:
-        st.error(f"⚠️ Dropout Risk: {dropout:.2f}")
-    else:
-        st.success(f"🎉 Probability to Continue: {1 - dropout:.2f}")
+    col_viz1, col_viz2 = st.columns([2, 1])
 
-    shap.initjs()
-    fig = plt.figure()
-    shap.plots.waterfall(exp_local, show=False)
-    st.pyplot(fig)
-    plt.close(fig)
+    with col_viz1:
+        st.markdown("#### Waterfall Plot")
+        fig_water = plt.figure(figsize=(8, 6))
+        shap.plots.waterfall(exp, show=False)
+        st.pyplot(fig_water)
+        plt.close(fig_water)
 
-    st.subheader("📄 Inputs used")
-    st.dataframe(X_df)
+    with col_viz2:
+        st.markdown("#### Prediction Result")
+        if prob is not None:
+            color = "#28a745" if prob < 0.33 else "#ffc107" if prob < 0.66 else "#dc3545"
+            st.markdown(
+                f"<div style='background-color:{color}20; padding:15px; border-radius:10px; text-align:center;'>"
+                f"<h2 style='color:{color}; margin:0;'>{prob:.2%}</h2>"
+                f"<p style='margin:0;'><b>Dropout Probability</b></p></div>", 
+                unsafe_allow_html=True
+            )
+        
+        st.markdown("#### Input Data")
+        # HERE IS THE CHANGE: We convert the data to readable text before showing it
+        readable_df = get_readable_df(X_input)
+        st.dataframe(readable_df.T, use_container_width=True)
 
     st.markdown("</div>", unsafe_allow_html=True)

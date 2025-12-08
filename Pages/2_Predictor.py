@@ -180,7 +180,8 @@ with tab_course:
             "last_model": "course",
             "last_prediction": time.time(),
             "X_df_course": X_df_course,
-            "dropout_course": dropout
+            "dropout_course": dropout,
+            "student_name": st.session_state.name
         })
 
         color = "#28a745" if dropout < 0.33 else "#ffc107" if dropout < 0.66 else "#dc3545"
@@ -246,7 +247,8 @@ with tab_nocourse:
             "last_model": "nocourse",
             "last_prediction": time.time(),
             "X_df_nocourse": X_df_nocourse,
-            "dropout_nocourse": dropout_nc
+            "dropout_nocourse": dropout_nc,
+            "student_name": st.session_state.name
         })
 
         color = "#28a745" if dropout_nc < 0.33 else "#ffc107" if dropout_nc < 0.66 else "#dc3545"
