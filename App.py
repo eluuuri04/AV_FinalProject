@@ -1,14 +1,13 @@
 import streamlit as st
 import pandas as pd
 
-# Page Configuration
+
 st.set_page_config(
     page_title="University Dropout Predictor",
     page_icon="🎓",
     layout="wide"
 )
 
-# Custom CSS
 st.markdown("""
 <style>
 /* Hero section */
@@ -70,7 +69,7 @@ st.markdown("""
 
 st.write("\n")
 
-# Feature Cards
+
 col1, col2, col3 = st.columns(3)
 
 with col1:
@@ -106,12 +105,12 @@ with col3:
     if st.button("Go to Explainability"):
         st.switch_page("pages/3_Explainability.py")
 
-# Footer with authors
+
 st.markdown("""
 ---
 👨‍💻 **Authors:**  
-- Uriel Cabañas Pedro (ID: 269121)  
-- Pau Colomer Coll (ID: 268401)
+- Uriel Cabañas Pedro (NIA: 269121)  
+- Pau Colomer Coll (NIA: 268401)
 """)
 
 # Load CSV

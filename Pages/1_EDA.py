@@ -3,14 +3,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# ================== PAGE CONFIG ==================
+
 st.set_page_config(
     page_title="EDA — Data Exploration",
     page_icon="📊",
     layout="wide"
 )
 
-# ================== GLOBAL STYLE ==================
 st.markdown("""
 <style>
 
@@ -48,7 +47,7 @@ html, body, [class*="css"]  {
 </style>
 """, unsafe_allow_html=True)
 
-# ================== TOP BAR ==================
+
 top_col1, top_col2 = st.columns([1, 4])
 
 with top_col1:
@@ -61,14 +60,14 @@ with top_col2:
 
 st.markdown("---")
 
-# ================== LOAD DATA ==================
+# Load data, saved for all pages in session state
 try:
     df = st.session_state["data"]
 except KeyError:
     st.error("❌ Data not loaded. Please return to the home page to upload the dataset.")
     st.stop()
 
-# ================== DATASET INFO ==================
+
 with st.container():
     st.markdown("<div class='section-card'>", unsafe_allow_html=True)
 
@@ -80,7 +79,7 @@ with st.container():
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-# ================== KPIs GLOBALS ==================
+# KPIs
 st.markdown("<div class='section-card'>", unsafe_allow_html=True)
 st.subheader("📌 Key Performance Indicators (KPIs)")
 
@@ -123,7 +122,7 @@ with col4:
 
 st.markdown("</div>", unsafe_allow_html=True)
 
-# ================== PREPARE GROUPS & MAPPINGS ==================
+# separate datasets
 df_drop = df[df['Target'] == 'Dropout']
 df_no_drop = df[df['Target'] != 'Dropout']
 
@@ -163,7 +162,7 @@ color_palette = plt.cm.Set2.colors
 palette = sns.color_palette("Set2", 2)
 color_map = {"Dropout": palette[0], "No Dropout": palette[1]}
 
-# ================== CATEGORICAL PIE CHARTS ==================
+# Pie Charts for categorical variables
 st.markdown("<div class='section-card'>", unsafe_allow_html=True)
 st.subheader("🥧📊 Dropout vs No Dropout — Categorical Variables")
 st.write("Select categorical variables to view their distribution between dropout and non-dropout students.")
@@ -210,7 +209,7 @@ for col_selected in selected_cats:
 
 st.markdown("</div>", unsafe_allow_html=True)
 
-# ================== NUMERIC DISTRIBUTIONS ==================
+# Distribution plots for numerical variables
 st.markdown("<div class='section-card'>", unsafe_allow_html=True)
 st.subheader("📈 Numeric KPI Distributions (Dropout vs No Dropout)")
 st.write("Explore numeric variable distributions and compare the behavior between both groups.")

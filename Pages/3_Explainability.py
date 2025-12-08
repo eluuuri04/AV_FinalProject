@@ -4,25 +4,61 @@ import numpy as np
 import shap
 import pickle
 import matplotlib.pyplot as plt
-import variables as vr  # <--- IMPORTED YOUR VARIABLES
+import variables as vr  
 
-# ================== PAGE CONFIG ==================
 st.set_page_config(page_title="Explainability", page_icon="🧩", layout="wide")
 
-# ================== GLOBAL STYLE ==================
+
 st.markdown("""
 <style>
-html, body, [class*="css"]  { font-family: 'Poppins', sans-serif; }
-.stTabs [role="tab"] { background: #e7f2ff; padding: 10px 22px; border-radius: 8px; font-weight: 600; margin-right: 10px; }
-.stTabs [role="tab"][aria-selected="true"] { background: linear-gradient(135deg, #1E90FF, #00CED1); color: white; }
-.stButton>button { background: linear-gradient(135deg, #1E90FF, #00CED1); color: white; border-radius: 8px; border: none; transition: .15s ease; }
-.stButton>button:hover { transform: translateY(-2px); }
-.main-header { font-size: 2.1rem; font-weight: 750; }
-.section-card { background-color: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+
+html, body, [class*="css"]  {
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Tabs styling */
+.stTabs [role="tab"] {
+    background: #e7f2ff;
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-weight: 600;
+    margin-right: 10px;
+    color: black !important;  /* Force text to be black */
+}
+
+.stTabs [role="tab"][aria-selected="true"] {
+    background: linear-gradient(135deg, #1E90FF, #00CED1);
+    color: black !important;  /* Force text to be black even when selected */
+}
+
+/* Buttons */
+.stButton>button {
+    background: linear-gradient(135deg, #1E90FF, #00CED1);
+    color: white;
+    border-radius: 8px;
+    border: none;
+    transition: .15s ease;
+}
+.stButton>button:hover {
+    transform: translateY(-2px);
+}
+
+.main-header {
+    font-size: 2.1rem;
+    font-weight: 750;
+}
+
+.section-card {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
-# ================== HEADER + NAV ==================
+# header
 top_col1, top_col2 = st.columns([1, 4])
 with top_col1:
     if st.button("⬅️ Home"):
@@ -31,7 +67,6 @@ with top_col2:
     st.markdown("<h1 class='main-header'>🔍 SHAP Explainability — Global & Local</h1>", unsafe_allow_html=True)
     st.write("Analyze feature impact on dropout probability (Global) and explain specific predictions (Local).")
 
-# ================== CACHED FUNCTIONS ==================
 
 @st.cache_resource
 def load_model(path):
@@ -108,13 +143,11 @@ def compute_global_shap_sampled(_pipeline, X, sample_size=300):
 
     return shap_out, X_sample
 
-# NEW: Helper function to map numbers to text for display
+# Numbers to text
 def get_readable_df(df_input):
     df_nice = df_input.copy()
     
-    # Map for columns present in your models (handling both standard and _nc suffixes)
     mappings = {
-        # Categories
         "marital": vr.marital_status, "marital_nc": vr.marital_status,
         "app_mode": vr.application_mode, "app_mode_nc": vr.application_mode,
         "course": vr.courses, "course_nc": vr.courses,
@@ -122,16 +155,10 @@ def get_readable_df(df_input):
         "prev_qual": vr.previous_qualification, "prev_qual_nc": vr.previous_qualification,
         "nationality": vr.nationalities, "nationality_nc": vr.nationalities,
         "gender": vr.gender, "gender_nc": vr.gender,
-        
-        # Qualifications
         "mother_qual": vr.mother_qual, "mother_qual_nc": vr.mother_qual,
         "father_qual": vr.fathers_qualification, "father_qual_nc": vr.fathers_qualification,
-        
-        # Jobs
         "mother_job": vr.mothers_occupation, "mother_job_nc": vr.mothers_occupation,
         "father_job": vr.fathers_occupation, "father_job_nc": vr.fathers_occupation,
-        
-        # Yes/No Fields
         "displaced": vr.yes_no, "displaced_nc": vr.yes_no,
         "special_needs": vr.yes_no, "special_nc": vr.yes_no,
         "scholarship": vr.yes_no, "scholarship_nc": vr.yes_no,
@@ -142,15 +169,12 @@ def get_readable_df(df_input):
 
     for col, map_dict in mappings.items():
         if col in df_nice.columns:
-            # Map values; if value not in dict, keep original number
             df_nice[col] = df_nice[col].map(map_dict).fillna(df_nice[col])
             
     return df_nice
 
-# ================== INITIALIZATION ==================
-
-raw_df = load_static_data()
-X_raw, _ = preprocess_data(raw_df)
+raw_df = load_static_data() 
+X_raw, _ = preprocess_data(raw_df) #Column names
 
 model_full = load_model("course_model.pkl")
 model_nocourse = load_model("nocourse_model.pkl")
@@ -169,12 +193,10 @@ if "shap_global_calculated" not in st.session_state:
             "shap_global_calculated": True
         })
 
-# ================== UI TABS ==================
 tab_global, tab_local = st.tabs(["🌍 Global Explainability", "🎯 Local Explainability"])
 
-# ----------------- GLOBAL -----------------
+# Global Explainability
 with tab_global:
-    st.markdown("<div class='section-card'>", unsafe_allow_html=True)
     st.subheader("🌍 Feature Importance (Global)")
     st.write("These plots show which features drive the model's decisions on average.")
 
@@ -198,9 +220,8 @@ with tab_global:
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-# ----------------- LOCAL -----------------
+# Local Explainability
 with tab_local:
-    st.markdown("<div class='section-card'>", unsafe_allow_html=True)
 
     if "last_model" not in st.session_state:
         st.warning("⚠️ No prediction found. Please go to the **Predictor** page first.")
@@ -269,7 +290,7 @@ with tab_local:
             )
         
         st.markdown("#### Input Data")
-        # HERE IS THE CHANGE: We convert the data to readable text before showing it
+        # Change nums to words
         readable_df = get_readable_df(X_input)
         st.dataframe(readable_df.T, use_container_width=True)
 

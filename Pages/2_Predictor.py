@@ -4,10 +4,9 @@ import pickle
 import numpy as np
 import time
 import variables as vr
-# ======================== PAGE CONFIG ===========================
+
 st.set_page_config(page_title="Student Dropout Predictor", layout="wide")
 
-# ======================== GLOBAL STYLE ===========================
 st.markdown("""
 <style>
 
@@ -61,13 +60,13 @@ h2 {
 </style>
 """, unsafe_allow_html=True)
 
-# ========================= LOAD MODELS =========================
+
 with open("course_model.pkl", "rb") as f:
     course_model = pickle.load(f)
 with open("nocourse_model.pkl", "rb") as f:
     nocourse_model = pickle.load(f)
 
-# ========================= HELPERS ==========================
+
 def show_optional(label, key, widget_fn, used_list, ignored_list, *args, **kwargs):
     ignore = st.checkbox(f"Ignore {label}", key=f"ignore_{key}")
     if ignore:
@@ -76,14 +75,19 @@ def show_optional(label, key, widget_fn, used_list, ignored_list, *args, **kwarg
     used_list.append(label)
     return widget_fn(label, key=key, *args, **kwargs)
 
-# ========================= MAIN UI ==========================
 top_col1, top_col2 = st.columns([1, 4])
 
 with top_col1:
     if st.button("⬅️ Home"):
         st.switch_page("App.py")
 
-st.text_input("Student's Name: ", key="name")
+cols1, cols2 = st.columns([1,6])
+
+with cols1:
+    st.subheader("Student's Name:")
+
+with cols2:
+    st.text_input("",  key="name")
 
 with top_col2:
     st.title("⚙️ Student Dropout Predictor")
@@ -105,9 +109,7 @@ def show_optional_dict(label, key, used_list, ignored_list, options_dict):
     return code
 
 
-# =================================================================================
-# TAB 1 — WITH COURSE PERFORMANCE
-# =================================================================================
+# With Course performance
 with tab_course:
     used_features = []; ignored_features = []
     st.markdown('<div class="section-card">', unsafe_allow_html=True)
@@ -130,7 +132,7 @@ with tab_course:
 
     with col2:
         scholarship = show_optional_dict("Scholarship", "scholarship", used_features, ignored_features, vr.scholarship_map)
-        age = show_optional("Age", "age", st.number_input, used_features, ignored_features, value=21)
+        age = show_optional("Age", "age", st.number_input, used_features, ignored_features, min_value = 0 , value=21)
         international = show_optional_dict("International", "international", used_features, ignored_features, vr.international_map)
         prev_grade = show_optional("Previous Grade", "prev_grade", st.number_input, used_features, ignored_features, min_value=0.0, max_value=100.0, value=95.0)
         nationality = show_optional_dict("Nationality", "nationality", used_features, ignored_features, vr.nationalities)
@@ -147,20 +149,20 @@ with tab_course:
     col1, col2 = st.columns(2)
 
     with col1:
-        cred_1 = show_optional("Credits 1", "cred_1_c", st.number_input, used_features, ignored_features, value=0)
-        enrolled_1 = show_optional("Enrolled 1", "enrolled_1_c", st.number_input, used_features, ignored_features, value=6)
-        evals_1 = show_optional("Evaluations 1", "evals_1_c", st.number_input, used_features, ignored_features, value=6)
-        approved_1 = show_optional("Approved 1", "approved_1_c", st.number_input, used_features, ignored_features, value=3)
-        grade_1 = show_optional("Grade 1", "grade_1_c", st.number_input, used_features, ignored_features, value=9.5)
-        no_evals_1 = show_optional("No Exams 1", "no_evals_1_c", st.number_input, used_features, ignored_features, value=0)
+        cred_1 = show_optional("Credits 1", "cred_1_c", st.number_input, used_features, ignored_features, min_value = 0, value=0)
+        enrolled_1 = show_optional("Enrolled 1", "enrolled_1_c", st.number_input, used_features, ignored_features,min_value = 0, value=6)
+        evals_1 = show_optional("Evaluations 1", "evals_1_c", st.number_input, used_features, ignored_features, min_value = 0, value=6)
+        approved_1 = show_optional("Approved 1", "approved_1_c", st.number_input, used_features, ignored_features, min_value = 0,value=3)
+        grade_1 = show_optional("Grade 1", "grade_1_c", st.number_input, used_features, ignored_features, min_value = 0.0 ,value=9.5)
+        no_evals_1 = show_optional("No Exams 1", "no_evals_1_c", st.number_input, used_features, ignored_features,min_value = 0, value=0)
 
     with col2:
-        cred_2 = show_optional("Credits 2", "cred_2_c", st.number_input, used_features, ignored_features, value=0)
-        enrolled_2 = show_optional("Enrolled 2", "enrolled_2_c", st.number_input, used_features, ignored_features, value=6)
-        evals_2 = show_optional("Evaluations 2", "evals_2_c", st.number_input, used_features, ignored_features, value=6)
-        approved_2 = show_optional("Approved 2", "approved_2_c", st.number_input, used_features, ignored_features, value=3)
-        grade_2 = show_optional("Grade 2", "grade_2_c", st.number_input, used_features, ignored_features, value=9.0)
-        no_evals_2 = show_optional("No Exams 2", "no_evals_2_c", st.number_input, used_features, ignored_features, value=0)
+        cred_2 = show_optional("Credits 2", "cred_2_c", st.number_input, used_features, ignored_features, min_value = 0,value=0)
+        enrolled_2 = show_optional("Enrolled 2", "enrolled_2_c", st.number_input, used_features, ignored_features, min_value = 0,value=6)
+        evals_2 = show_optional("Evaluations 2", "evals_2_c", st.number_input, used_features, ignored_features,min_value = 0, value=6)
+        approved_2 = show_optional("Approved 2", "approved_2_c", st.number_input, used_features, ignored_features,min_value = 0, value=3)
+        grade_2 = show_optional("Grade 2", "grade_2_c", st.number_input, used_features, ignored_features, min_value = 0.0 ,value=9.0)
+        no_evals_2 = show_optional("No Exams 2", "no_evals_2_c", st.number_input, used_features, ignored_features, min_value = 0,value=0)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -193,9 +195,7 @@ with tab_course:
             unsafe_allow_html=True,
         )
 
-# =================================================================================
-# TAB 2 — WITHOUT COURSE PERFORMANCE
-# =================================================================================
+# Without course performance
 with tab_nocourse:
     used_features = []; ignored_features = []
 
@@ -218,7 +218,7 @@ with tab_nocourse:
 
     with col2:
         scholarship = show_optional_dict("Scholarship", "scholarship_nc", used_features, ignored_features, vr.scholarship_map)
-        age = show_optional("Age", "age_nc", st.number_input, used_features, ignored_features, value=21)
+        age = show_optional("Age", "age_nc", st.number_input, used_features, ignored_features, min_value = 0, value=21)
         international = show_optional_dict("International", "international_nc", used_features, ignored_features, vr.international_map)
         prev_grade = show_optional("Previous Grade", "prev_grade_nc", st.number_input, used_features, ignored_features, min_value=0.0, max_value=100.0, value=95.0)
         nationality = show_optional_dict("Nationality", "nationality_nc", used_features, ignored_features, vr.nationalities)
