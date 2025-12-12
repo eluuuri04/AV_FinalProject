@@ -11,6 +11,8 @@ st.set_page_config(
     layout="wide"
 )
 
+
+
 st.markdown("""
 <style>
 
@@ -84,6 +86,22 @@ with st.container():
 st.markdown("<div class='section-card'>", unsafe_allow_html=True)
 st.subheader("📌 Key Performance Indicators (KPIs)")
 
+# --- Càlcul de percentatges del Target ---
+target_counts = df['Target'].value_counts(normalize=True) * 100
+
+t_col1, t_col2, t_col3 = st.columns(3)
+
+with t_col1:
+    st.metric("❌ Dropout Rate", f"{target_counts.get('Dropout', 0):.1f}%")
+
+with t_col2:
+    st.metric("⏳ Enrolled Rate", f"{target_counts.get('Enrolled', 0):.1f}%")
+
+with t_col3:
+    # Busca 'Graduate' o 'Graduated' per si de cas
+    grad_val = target_counts.get('Graduate', target_counts.get('Graduated', 0))
+    st.metric("🎓 Graduation Rate", f"{grad_val:.1f}%")
+    
 prev_grade = df["Previous qualification (grade)"].mean()
 admission_grade = df["Admission grade"].mean()
 

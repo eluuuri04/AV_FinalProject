@@ -176,7 +176,7 @@ with tab_course:
 
     if st.button("Predict 📊", key="predict_course"):
         X_df_course = pd.DataFrame([locals()]).filter(items=course_model.feature_names_in_)
-        dropout = course_model.predict_proba(X_df_course)[0][1]
+        dropout = 1 - course_model.predict_proba(X_df_course)[0][1]
 
         st.session_state.update({
             "last_model": "course",
@@ -241,7 +241,7 @@ with tab_nocourse:
 
     if st.button("Predict 📊", key="predict_nocourse"):
         X_df_nocourse = pd.DataFrame([locals()]).filter(items=nocourse_model.feature_names_in_)
-        dropout_nc = nocourse_model.predict_proba(X_df_nocourse)[0][1]
+        dropout_nc = 1- nocourse_model.predict_proba(X_df_nocourse)[0][1]
 
         st.session_state.update({
             "last_model": "nocourse",

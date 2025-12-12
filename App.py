@@ -107,6 +107,14 @@ with col3:
 
 
 st.markdown("""
+**Key Questions:**
+* Which factors influence dropout the most?
+* Can we accurately predict which students are at risk?
+* How do distinct factors affect student performance?
+""")
+
+
+st.markdown("""
 ---
 👨‍💻 **Authors:**  
 - Uriel Cabañas Pedro (NIA: 269121)  
